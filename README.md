@@ -12,6 +12,8 @@ The 3D world builder is a blender plugin to generate and style a 3D world quickl
 
 It also has a headless function, so that it can run blender even faster.
 
+<img src="example.png" />
+
 ### Requirements
 
 - Blender 2.8.3+
