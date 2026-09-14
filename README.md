@@ -101,3 +101,8 @@ For example, to only process buildings, openings, and roads together:
 
 Use --all=True to run everything in sequence without specifying each option.
 ```
+
+---
+
+### Credits
+Flaneurette, ChatGPT, Claude.ai in various stages.
