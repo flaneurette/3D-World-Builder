@@ -431,6 +431,7 @@ def get_or_create_pbr_material(base_name, texture_folder, export_folder):
     
     # First pass: Load all textures
     textures = {}
+
     
     valid_image_extensions = ('.png', '.jpg', '.jpeg') 
     # Filter files to include only valid image files
@@ -1327,7 +1328,8 @@ def batch_create_doors(building_obj, settings, doors_collection, wall_groups=Non
     """
     doors_collection_name = f"Doors"
     doors_collection = bpy.data.collections[doors_collection_name]
-    door_depth = 0.025
+    door_depth = 0.050
+    DOOR_WALL_OFFSET = 0.04  # was 0.01 - too thin, caused z-fighting flicker
     doors_meta = []
     
     # Check if object has mesh data
@@ -1464,8 +1466,11 @@ def batch_create_doors(building_obj, settings, doors_collection, wall_groups=Non
         # Move to wall surface (use average y position)
         door_position += normal_local * avg_y
         door_position -= normal_local * door_depth  # correct subtraction
-        # Add small offset to prevent z-fighting
-        door_position += normal_local * 0.01
+        # Offset away from the wall surface. This needs to be large enough
+        # that the door face and the boolean-cut wall edge are never close
+        # to coplanar, or they'll z-fight (flicker) in-engine. 1cm was not
+        # enough; 4cm gives a comfortable margin at typical building scale.
+        door_position += normal_local * DOOR_WALL_OFFSET
 
         # Create rotation matrix
         z_local = Vector((0, 0, 1))
@@ -1537,10 +1542,10 @@ def batch_create_windows(building_obj, settings, windows_collection, wall_groups
     WINDOW_MARGIN = 0.5  # Space from edges and between windows
     FLOOR_BOTTOM_MARGIN = 3.5  # Distance from floor
     FLOOR_TOP_MARGIN = 3.0  # Distance from ceiling (larger to avoid sloped roofs)
-    WALL_OFFSET = 0.01
+    WALL_OFFSET = 0.09  # distance from wall surface to the window's INNER face
     DOOR_OFFSET = 3 # This allows windows to be placed above doors.
     ROOF_OFFSET = 2.5 # Higher avoids window tiling on roofs.
-    window_depth = 0.015
+    window_depth = 0.150
     windows_meta = []
     
     windows_collection_name = f"Windows"
@@ -1694,22 +1699,47 @@ def batch_create_windows(building_obj, settings, windows_collection, wall_groups
                     # Push window out from wall slightly
                     window_center += wall_normal * WALL_OFFSET
                     
-                    # Create window quad aligned to wall direction
+                    # Build a proper box with real thickness instead of a
+                    # zero-thickness quad. A flat plane sitting a few cm from
+                    # the boolean-cut hole edge is effectively coplanar with
+                    # it from most viewing angles, which causes z-fighting
+                    # (flickering) once this is in a real-time engine.
+                    # Giving it depth, like the doors already have, means
+                    # there's never a single ambiguous shared plane.
                     half_width = settings.window_width / 2
                     half_height = settings.window_height / 2
-                    
-                    # Build vertices using wall_direction
-                    v1 = bm.verts.new(window_center + (wall_direction * -half_width) + Vector((0, 0, -half_height)))
-                    v2 = bm.verts.new(window_center + (wall_direction * half_width) + Vector((0, 0, -half_height)))
-                    v3 = bm.verts.new(window_center + (wall_direction * half_width) + Vector((0, 0, half_height)))
-                    v4 = bm.verts.new(window_center + (wall_direction * -half_width) + Vector((0, 0, half_height)))
-                    
-                    face = bm.faces.new([v1, v2, v3, v4])
-                    face.normal_update()
-                    
-                    # Orient face to match wall
-                    if face.normal.dot(wall_normal) < 0:
-                        face.normal_flip()
+                    half_depth = window_depth / 2
+
+                    inner_center = window_center - wall_normal * half_depth
+                    outer_center = window_center + wall_normal * half_depth
+
+                    def box_vert(center, u_off, z_off):
+                        return bm.verts.new(center + (wall_direction * u_off) + Vector((0, 0, z_off)))
+
+                    # inner (toward building interior) and outer (toward street) faces
+                    i1 = box_vert(inner_center, -half_width, -half_height)
+                    i2 = box_vert(inner_center, half_width, -half_height)
+                    i3 = box_vert(inner_center, half_width, half_height)
+                    i4 = box_vert(inner_center, -half_width, half_height)
+                    o1 = box_vert(outer_center, -half_width, -half_height)
+                    o2 = box_vert(outer_center, half_width, -half_height)
+                    o3 = box_vert(outer_center, half_width, half_height)
+                    o4 = box_vert(outer_center, -half_width, half_height)
+
+                    faces = [
+                        bm.faces.new([i1, i2, i3, i4]),  # inner
+                        bm.faces.new([o4, o3, o2, o1]),  # outer
+                        bm.faces.new([i1, o1, o2, i2]),  # bottom
+                        bm.faces.new([i2, o2, o3, i3]),  # right
+                        bm.faces.new([i3, o3, o4, i4]),  # top
+                        bm.faces.new([i4, o4, o1, i1]),  # left
+                    ]
+                    for face in faces:
+                        face.normal_update()
+
+                    # Box is a closed manifold shape, so recalc will get all
+                    # six faces pointing consistently outward in one pass.
+                    bmesh.ops.recalc_face_normals(bm, faces=faces)
 
                     # Store real metadata (window_center/wall_normal are
                     # already in world space here)
@@ -2604,6 +2634,7 @@ class EXPORT_DATA(bpy.types.Operator):
         view_layer = bpy.context.view_layer
 
         for obj in all_objects:
+
             if obj.name in view_layer.objects:
                 obj.select_set(True)
                 for c in obj.children:
@@ -2657,7 +2688,7 @@ class EXPORT_DATA(bpy.types.Operator):
             # use_tspace=False,
             use_custom_props=True,
             add_leaf_bones=False,
-            bake_space_transform=False,
+            bake_space_transform=True,
             path_mode='COPY',
             embed_textures=True,
             axis_forward='-Z',
@@ -3723,4 +3754,3 @@ if __name__ == "__main__":
                 print_to_stream("Console is now exporting data...\n", stream=None, base_time=time.time())
                 console_export_data()
                 print_to_stream("Console export complete!\n", stream=None, base_time=time.time())
-
