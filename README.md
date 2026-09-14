@@ -1,7 +1,14 @@
 #### 3D World Builder
 
 The 3D world builder is a blender plugin to generate and style a 3D world quickly.
-It stylizes a (game)world based upon OSM data: texturizes walls, roofs, waterways, greenery, roads, railways. It als can generate placeholder trees, decal windows and and doors. t also can "carve" waterways, and solidify all meshes automatically. It has a special function to carve out random doors and windows from meshes. It can process (and fully style) 15.000+ "buildings" in less than 10 minutes of a proper CPU/GPU. Which equates to 3-5sq. kilometers of city data.
+
+The plugin expect a fully 3D world, that was generated with either Blosm, or Blender GIS.
+
+- It stylizes a (game)world based upon OSM data: texturizes walls, roofs, waterways, greenery, roads, railways.
+- It also can generate placeholder trees, decal windows and and doors. 
+- It also can "carve" waterways, and solidify all meshes automatically.
+- It has a special function to carve out random doors and windows from meshes. 
+- It can process (and fully style) 15.000+ "buildings" in less than 10 minutes of a proper CPU/GPU. Which equates to 3-5sq. kilometers of city data.
 
 It also has a headless function, so that it can run blender even faster.
 
