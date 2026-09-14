@@ -2,7 +2,7 @@
 
 The 3D world builder is a blender plugin to generate and style a 3D world quickly.
 
-> Note: The plugin expect a full 3D world, that was generated with either Blosm or Blender GIS. If you do not have .OSM data, this plugin will be useless.
+> Note: The plugin expect a full 3D world, that was generated with either OSM, Blosm or Blender GIS. If you do not have OSM data, this plugin will be useless.
 
 - It stylizes a (game)world based upon OSM data: texturizes walls, roofs, waterways, greenery, roads, railways.
 - It also can generate placeholder trees, decal windows and and doors. 
