@@ -1,4 +1,4 @@
-#### 3D World Builder
+# 3D World Builder
 
 The 3D world builder is a blender plugin to generate and style a 3D world quickly.
 
