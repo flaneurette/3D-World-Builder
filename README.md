@@ -12,23 +12,23 @@ The 3D world builder is a blender plugin to generate and style a 3D world quickl
 
 It also has a headless function, so that it can run blender even faster.
 
-#### Requirements
+### Requirements
 
 - Blender 2.8.3+
 - Python
 - Any OS: Tested on Windows and Linux. (Mac is untested.)
 
-#### Installation
+### Installation
 
-Import the script into Blender: editi -> preferences -> addons
+Import the script into Blender: `edit -> preferences -> addons`
 
 Then click 'N' to open the sidebar, where the World Bar will be visible.
 
-#### Texture folders.
+### Texture folders.
 
 The folder structure is what the script expects! do not change it. Simply add your textures to each folder, and the script will sort it out.
 
-#### Add your textures into each subfolder.
+### Add your textures into each subfolder.
 
 The script expects textures to be named like:
 
